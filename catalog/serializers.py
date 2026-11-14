@@ -71,7 +71,7 @@ class ShowcaseItemCardSerializer(serializers.ModelSerializer):
     comments_count = serializers.IntegerField(read_only=True, default=0)
     category = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     process = serializers.SlugRelatedField(slug_field="slug", read_only=True)
-    material = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    material = MaterialSerializer(read_only=True)
 
     class Meta:
         model = ShowcaseItem

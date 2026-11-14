@@ -30,7 +30,9 @@ def request_payment(order, description: str) -> dict:
     Returns {"ok": bool, "payment_url": str|None, "authority": str|None, "code": int|None,
              "persian_error": str|None, "raw": dict}.
     """
-    callback_url = settings.ZARINPAL_CALLBACK_URL or f"{settings.FRONTEND_URL}/payment/result"
+    # ZarinPal redirects the user's browser here; it must hit the Django
+    # verification view, which then redirects to FRONTEND_URL/payment/result.
+    callback_url = settings.ZARINPAL_CALLBACK_URL or f"{settings.FRONTEND_URL}/api/payments/zarinpal/callback"
     payload = {
         "merchant_id": _merchant_id(),
         "amount": order.total * 10,  # Toman -> Rial

@@ -76,6 +76,34 @@ def _placeholder_image(width, height, palette, seed_text=""):
     return out.getvalue()
 
 
+def _stl_stub(name="model"):
+    """A small but valid ASCII STL (tetrahedron) so the 3D preview renders."""
+    return (
+        f"solid {name}\n"
+        "  facet normal 0 0 1\n"
+        "    outer loop\n"
+        "      vertex 0 0 0\n      vertex 50 0 0\n      vertex 25 45 0\n"
+        "    endloop\n"
+        "  endfacet\n"
+        "  facet normal 0 -0.5 0.9\n"
+        "    outer loop\n"
+        "      vertex 0 0 0\n      vertex 50 0 0\n      vertex 25 20 35\n"
+        "    endloop\n"
+        "  endfacet\n"
+        "  facet normal -0.9 0.2 0.4\n"
+        "    outer loop\n"
+        "      vertex 0 0 0\n      vertex 25 20 35\n      vertex 25 45 0\n"
+        "    endloop\n"
+        "  endfacet\n"
+        "  facet normal 0.9 0.2 0.4\n"
+        "    outer loop\n"
+        "      vertex 50 0 0\n      vertex 25 45 0\n      vertex 25 20 35\n"
+        "    endloop\n"
+        "  endfacet\n"
+        f"endsolid {name}\n"
+    ).encode()
+
+
 class Command(BaseCommand):
     help = "Seed factory catalog data (idempotent)."
 
@@ -207,16 +235,16 @@ class Command(BaseCommand):
                     ),
                     sort_order=1,
                 )
-            if created or not item.files.exists():
-                stl_stub = (
-                    b"solid placeholder\nendsolid placeholder\n"
-                )
+            if created or not item.files.exists() or (item.files.first() and item.files.first().size_bytes < 200):
+                # Replace any earlier empty stub with a valid tetrahedron.
+                item.files.all().delete()
+                stl_content = _stl_stub(slug)
                 ShowcaseFile.objects.create(
                     item=item,
-                    file=ContentFile(stl_stub, name=f"{slug}.stl"),
+                    file=ContentFile(stl_content, name=f"{slug}.stl"),
                     original_name=f"{slug}.stl",
                     file_type="stl",
-                    size_bytes=len(stl_stub),
+                    size_bytes=len(stl_content),
                     is_preview_model=True,
                 )
             item.tags.add(tags["functional"], tags["prototype"] if index % 2 else tags["gift"])
